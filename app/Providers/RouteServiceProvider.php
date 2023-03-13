@@ -34,6 +34,8 @@ class RouteServiceProvider extends ServiceProvider
             Route::middleware('web')
                 ->group(base_path('routes/web.php'));
         });
+
+        $this->configureTemporaryPublicUrls();
     }
 
     /**
@@ -44,5 +46,17 @@ class RouteServiceProvider extends ServiceProvider
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
+    }
+
+    protected function configureTemporaryPublicUrls(): void
+    {
+        Storage::disk('public_local_signed')
+            ->buildTemporaryUrlsUsing(function ($path, $expiration, $options) {
+                return URL::temporarySignedRoute(
+                    'filestore.temp',
+                    $expiration,
+                    array_merge($options, ['path' => $path])
+                );
+            });
     }
 }
